@@ -21,7 +21,7 @@ class RegistrationView(APIView):
                 'email': saved_account.email,
                 'user_id': saved_account.pk
             }
-            return Response(data)
+            return Response({"detail": "User created successfully!"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
