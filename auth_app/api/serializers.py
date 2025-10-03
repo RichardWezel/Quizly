@@ -19,11 +19,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
             }
         }
 
-    def validate_confirmed_password(self, value):
-        password = self.initial_data.get('password')
-        if password and value and password != value:
-            raise serializers.ValidationError('Passwords do not match')
-        return value
+    def validate(self, attrs):
+        pw = attrs.get('password')
+        cpw = attrs.get('confirmed_password')
+
+        if not pw or not cpw:
+            raise serializers.ValidationError('Password and confirmation are required.')
+
+        if pw != cpw:
+            raise serializers.ValidationError('Passwords do not match.')
+
+        attrs.pop('confirmed_password', None)
+        return attrs
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
