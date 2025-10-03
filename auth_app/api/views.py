@@ -24,13 +24,7 @@ class RegistrationView(APIView):
             return Response(data)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-class HelloWorldView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        return Response(data={"message": "Hello, World!"}, status=status.HTTP_200_OK)
-    
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer

@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    repeated_password = serializers.CharField(write_only=True)
+    confirmed_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
@@ -33,7 +33,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def save(self):
         pw = self.validated_data['password']
 
-        account = User(email=self.validated_data['email'], username=self.validated_data['username'])
+        account = User(
+            email=self.validated_data['email'], 
+            username=self.validated_data['username']
+        )
         account.set_password(pw)
         account.save()
         return account
