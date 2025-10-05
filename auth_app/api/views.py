@@ -1,13 +1,15 @@
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .serializers import RegistrationSerializer, LoginSerializer
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
+
+from .permissions import HasValidJWTForLogout
 from .authentication import CookieJWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError 
+from .serializers import RegistrationSerializer, LoginSerializer
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -64,7 +66,7 @@ class LoginView(TokenObtainPairView):
             return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasValidJWTForLogout]
     authentication_classes = [CookieJWTAuthentication, JWTAuthentication]
 
     def post(self, request):
@@ -75,6 +77,7 @@ class LogoutView(APIView):
                     token = RefreshToken(refresh_token)
                     token.blacklist()  
                 except TokenError:
+                          # z.B. schon abgelaufen/invalid – ignorieren, wir löschen eh die Cookies
                     pass
 
             response = Response(
@@ -84,26 +87,15 @@ class LogoutView(APIView):
                 status=status.HTTP_200_OK
             )
 
-            response.delete_cookie(
-                key='access_token',
-                samesite='Lax',
-                secure=True,
-                httponly=True,
-            )
-            response.delete_cookie(
-                key='refresh_token',
-                samesite='Lax',
-                secure=True,
-                httponly=True,
-            )
+
+            response.delete_cookie('access_token', path='/', samesite='Lax') 
+            response.delete_cookie('refresh_token', path='/', samesite='Lax') 
 
             return response
 
         except Exception:
-            return Response(
-                {"detail": "Internal Server Error"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"detail": "Internal Server Error"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
 class CookieTokenRefreshView(TokenRefreshView):
