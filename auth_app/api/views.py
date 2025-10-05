@@ -2,10 +2,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .serializers import RegistrationSerializer
+from .serializers import RegistrationSerializer, LoginSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .serializers import CustomTokenObtainPairSerializer
+
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -27,7 +27,7 @@ class RegistrationView(APIView):
 
 
 class LoginView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+    serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -35,8 +35,9 @@ class LoginView(TokenObtainPairView):
         
         refresh = serializer.validated_data["refresh"]
         access = serializer.validated_data["access"]
+        user = serializer.validated_data["user"]
 
-        response = Response({"message": "Login erfolgreich"})
+        response = Response({"detail": "Login successfully", "user": user})
 
         response.set_cookie(
             key='access_token',

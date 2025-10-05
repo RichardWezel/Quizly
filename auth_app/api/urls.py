@@ -1,5 +1,5 @@
 from django.urls import path, include
-from auth_app.api.views import RegistrationView, LoginView, LogoutView
+from auth_app.api.views import RegistrationView, LoginView, LogoutView 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
