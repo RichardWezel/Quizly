@@ -41,26 +41,26 @@ class LoginView(TokenObtainPairView):
 
             response = Response({"detail": "Login successfully", "user": user})
 
+            response.set_cookie(
+                key='access_token',
+                value=str(access),
+                httponly=True,
+                secure=True,  
+                samesite='Lax'  
+            )
+            response.set_cookie(
+                key='refresh_token',
+                value=str(refresh),
+                httponly=True,
+                secure=True,  
+                samesite='Lax'  
+            )
+
+            return response
+
         except Exception as e:
             return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        response.set_cookie(
-            key='access_token',
-            value=str(access),
-            httponly=True,
-            secure=True,  
-            samesite='Lax'  
-        )
-        response.set_cookie(
-            key='refresh_token',
-            value=str(refresh),
-            httponly=True,
-            secure=True,  
-            samesite='Lax'  
-        )
-
-        return response
-    
 class LogoutView(APIView):
     pass
     
