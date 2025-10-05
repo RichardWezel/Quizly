@@ -27,17 +27,22 @@ class RegistrationView(APIView):
 
 
 class LoginView(TokenObtainPairView):
+    permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        refresh = serializer.validated_data["refresh"]
-        access = serializer.validated_data["access"]
-        user = serializer.validated_data["user"]
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
-        response = Response({"detail": "Login successfully", "user": user})
+            refresh = serializer.validated_data["refresh"]
+            access = serializer.validated_data["access"]
+            user = serializer.validated_data["user"]
+
+            response = Response({"detail": "Login successfully", "user": user})
+
+        except Exception as e:
+            return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
         response.set_cookie(
             key='access_token',
