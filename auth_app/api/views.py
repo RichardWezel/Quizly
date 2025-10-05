@@ -55,6 +55,9 @@ class LoginView(TokenObtainPairView):
 
         return response
     
+class LogoutView(APIView):
+    pass
+    
 class CookieTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get('refresh_token')
