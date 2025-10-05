@@ -29,3 +29,21 @@ class HasValidJWTForLogout(BasePermission):
                 pass
 
         return False
+
+class HasRefreshTokenAuth(BasePermission):
+    """
+    Erlaubt Zugriff, wenn ein gültiges Access- ODER Refresh-Token im Cookie liegt.
+    """
+    def has_permission(self, request, view):
+
+        # Refresh prüfen
+        refresh = request.COOKIES.get('refresh_token')
+        if refresh:
+            try:
+                # Konstruktor validiert Signatur/Expiry
+                RefreshToken(refresh)
+                return True
+            except TokenError:
+                pass
+
+        return False
