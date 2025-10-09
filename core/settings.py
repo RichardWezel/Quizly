@@ -28,6 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+GEMINI_API_KEY = 'AIzaSyD_xdvMmP-c43pOybyJMUkOuuTvCBx68ts'
 
 # Application definition
 
