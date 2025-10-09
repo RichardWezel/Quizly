@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +29,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-GEMINI_API_KEY = 'AIzaSyD_xdvMmP-c43pOybyJMUkOuuTvCBx68ts'
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise RuntimeError(
+        "GEMINI_API_KEY fehlt. Setze ihn als Umgebungsvariable (z. B. in .env oder im Deployment)."
+    )
 
 # Application definition
 

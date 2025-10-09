@@ -3,6 +3,7 @@ import re
 import json
 import yt_dlp
 import whisper
+from google import genai
 
 # ---------- Helpers ----------
 def validate_youtube_url(url):
@@ -126,3 +127,7 @@ def transcribe_audio_of_youtube(url: str, delete_audio: bool = True):
         "text_path": text_path,
         "video_id": video_id,
     }
+
+def generate_questions(transcript: str):
+
+   pass

@@ -19,6 +19,8 @@ venv/
 # Other
 *.log
 .env
+.env.*
+*.env
 
 # Ignore contents of audio_file and text_file in quizapp
 quizapp/audio_file/
