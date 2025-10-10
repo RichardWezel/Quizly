@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import CreateQuizSerializer, QuizReadSerializer
 
 class CreateQuizView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
+    
     serializer_class = CreateQuizSerializer
 
     def post(self, request, *args, **kwargs):

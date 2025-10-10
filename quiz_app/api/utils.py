@@ -1,13 +1,13 @@
 import os
 import re
-import json
 import yt_dlp
 import whisper
-from google import genai
+
 
 # ---------- Helpers ----------
 def validate_youtube_url(url):
     """Validate if the provided URL is a valid YouTube URL."""
+    print(f"-> Validating YouTube URL: {url}")
     valid_prefixes = (
         "https://www.youtube.com/watch?v=",
         "http://www.youtube.com/watch?v=",
@@ -28,16 +28,13 @@ def yt_url_to_id(url: str):
     m = re.search(r"youtu\.be/([A-Za-z0-9_-]{6,})", url)
     return m.group(1) if m else None
 
-def _ensure_dir(path: str):
-    os.makedirs(path, exist_ok=True)
-
 def _sanitize_filename(name: str) -> str:
     # einfache Sanitization für Dateinamen
     return re.sub(r'[\\/*?:"<>|]+', "_", name).strip()
 
-# ---------- Download ----------
 def download_audio(url):
     """Download audio from a YouTube URL and save it as an MP3 file."""
+    print(f"-> Downloading audio from: {url}")
     # Zielordner definieren (relativ zum Projektverzeichnis)
     output_dir = os.path.join("quiz_app", "audio_file")
 
@@ -72,12 +69,12 @@ def download_audio(url):
 
         return safe_mp3 if os.path.exists(safe_mp3) else mp3_path
     
-# ---------- Transkription ----------
 def transcript_audio(file_path: str):
     """
     Transkribiert Audio mit Whisper, speichert .txt in quiz_app/text_file/
     und gibt (text, text_file_path) zurück.
     """
+    print(f"-> Transcribing audio file: {file_path}")
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Audio file not found: {file_path}")
 
@@ -86,48 +83,9 @@ def transcript_audio(file_path: str):
     result = model.transcribe(file_path)
     text = (result.get("text") or "").strip()
 
-    output_dir = os.path.join("quiz_app", "text_file")
-    _ensure_dir(output_dir)
+    if not text:
+        raise ValueError("No transcribed text found")
+    else:
+        os.remove(file_path)
 
-    base_name = _sanitize_filename(os.path.splitext(os.path.basename(file_path))[0])
-    text_file_path = os.path.join(output_dir, f"{base_name}.txt")
-
-    with open(text_file_path, "w", encoding="utf-8") as f:
-        f.write(text)
-
-    return text, text_file_path
-
-
-# ---------- End-to-end ----------
-def transcribe_audio_of_youtube(url: str, delete_audio: bool = True):
-    """
-    End-to-end: YouTube-URL -> MP3 downloaden -> transkribieren -> optional MP3 löschen.
-    Rückgabe: dict mit { "text", "audio_path", "text_path", "video_id" }
-    """
-    if not validate_youtube_url(url):
-        raise ValueError("Invalid YouTube URL")
-
-    video_id = yt_url_to_id(url)
-    if not video_id:
-        raise ValueError("Could not extract video ID from URL")
-
-    mp3_path = download_audio(url)
-    text, text_path = transcript_audio(mp3_path)
-
-    if delete_audio:
-        try:
-            if os.path.exists(mp3_path):
-                os.remove(mp3_path)
-        except Exception:
-            pass
-
-    return {
-        "text": text,
-        "audio_path": mp3_path if not delete_audio else None,
-        "text_path": text_path,
-        "video_id": video_id,
-    }
-
-def generate_questions(transcript: str):
-
-   pass
+    return text
