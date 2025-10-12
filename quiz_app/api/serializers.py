@@ -9,7 +9,7 @@ from google import genai
 class QuestionReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'question_title', 'question_options', 'answer', 'created_at', 'updated_at']
+        fields = ['id', 'question_title', 'question_options', 'answer']
 
 class QuizReadSerializer(serializers.ModelSerializer):
     questions = QuestionReadSerializer(many=True, read_only=True)
@@ -89,4 +89,3 @@ class CreateQuizSerializer(serializers.Serializer):
         except json.JSONDecodeError:
             raise ValueError("Generated content is not valid JSON")
         
-
