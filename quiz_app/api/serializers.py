@@ -25,6 +25,7 @@ def download_and_transcripe_yt_video(url):
         try:
             mp3_path = download_audio(url)
             text = transcript_audio(mp3_path)
+            print("-> Text transcription successful.")
             return text
         except Exception:
             raise ValueError("Error processing the YouTube video. Not able to download or transcribe.")
@@ -43,7 +44,7 @@ class CreateQuizSerializer(serializers.Serializer):
         transcription =  download_and_transcripe_yt_video(url)
 
         # Generierung von Fragen 
-
+        print("-> Generating quiz from transcript...")
         client = genai.Client()
         response_gemini = client.models.generate_content(
             model="gemini-2.5-flash",
@@ -83,6 +84,7 @@ class CreateQuizSerializer(serializers.Serializer):
         
         try:
             quiz_json = json.loads(quiz_data)
+            print("-> Quiz generation successful.")
             return quiz_json
         except json.JSONDecodeError:
             raise ValueError("Generated content is not valid JSON")
