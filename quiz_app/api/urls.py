@@ -2,6 +2,6 @@ from django.urls import path
 from quiz_app.api.views import CreateQuizView, QuizListView
 
 urlpatterns = [
-    path('createQuiz/', CreateQuizView.as_view(), name='create_quiz'),
-    path('quizzes/', QuizListView.as_view(), name='quiz_list'),
+    path('createQuiz/', CreateQuizView.as_view(), name='create-quiz'),
+    path('quizzes/', QuizListView.as_view(), name='quiz-list'),
 ]

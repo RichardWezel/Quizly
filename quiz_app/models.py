@@ -15,6 +15,8 @@ class Quiz(models.Model):
                 name='unique_quiz_per_video_url'
             )
         ]
+        verbose_name = 'Quiz'
+        verbose_name_plural = 'Quizzes'
 
     def __str__(self):
         return self.title

@@ -5,6 +5,7 @@ from quiz_app.models import Quiz, Question
 from quiz_app.api.utils import validate_youtube_url, download_audio, transcript_audio
 import json
 from google import genai
+from django.db import transaction
 
 class QuestionReadSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,30 +19,28 @@ class QuizReadSerializer(serializers.ModelSerializer):
         model = Quiz
         fields = ['id', 'title', 'description', 'created_at', 'updated_at', 'video_url', 'questions']
 
-def download_and_transcripe_yt_video(url):
+def _download_and_transcripe_yt_video(url):
     # Validierung der YouTube-URL
-    
-        
         try:
             mp3_path = download_audio(url)
             text = transcript_audio(mp3_path)
             print("-> Text transcription successful.")
             return text
         except Exception:
-            raise ValueError("Error processing the YouTube video. Not able to download or transcribe.")
+            raise serializers.ValidationError("Error processing the YouTube video (download/transcript).")
 
 class CreateQuizSerializer(serializers.Serializer):
     url = serializers.URLField()
 
-    def create(self, validated_data):
-        url = validated_data['url']
-
-        # Validierung der YouTube-URL
+    # ---------- Validierung ----------
+    def validate_url(self, url):
         if not validate_youtube_url(url):
-            raise ValueError("Invalid YouTube URL")
-        
-        # download and transcripe YouTube-Video
-        transcription =  download_and_transcripe_yt_video(url)
+            raise serializers.ValidationError("Ungültige YouTube-URL.")
+        return url
+    
+    # ---------- Quiz-Generierung ----------
+    def _generate_quiz_from_transcript(self, url):
+        transcription = _download_and_transcripe_yt_video(url)
 
         # Generierung von Fragen 
         print("-> Generating quiz from transcript...")
@@ -85,7 +84,69 @@ class CreateQuizSerializer(serializers.Serializer):
         try:
             quiz_json = json.loads(quiz_data)
             print("-> Quiz generation successful.")
-            return quiz_json
         except json.JSONDecodeError:
+            print("-> Failed to parse generated content as JSON.")
             raise ValueError("Generated content is not valid JSON")
+        
+        return quiz_json
+    
+    # ---------- Persistenz ----------
+        
+    def create(self, validated_data):
+        url = validated_data['url']
+
+        # 1) Generiere Quiz-Daten
+        quiz_json = self._generate_quiz_from_transcript(url)
+
+        # 2) Minimale Struktur-Validierung
+        title = quiz_json.get("title")
+        description = quiz_json.get("description", "")
+        questions = quiz_json.get("questions")
+
+        if not isinstance(title, str) or not title.strip():
+            raise serializers.ValidationError("Fehlender oder leerer Titel im generierten Quiz.")
+        if not isinstance(questions, list) or len(questions) != 10:
+            raise serializers.ValidationError("Das generierte Quiz muss genau 10 Fragen enthalten.")
+
+        # 3) DB-Transaktion (idempotent pro video_url)
+        with transaction.atomic():
+            # Upsert per video_url: vorhandenes Quiz aktualisieren & Fragen ersetzen
+            quiz, created = Quiz.objects.get_or_create(
+                video_url=url,
+                defaults={"title": title.strip(), "description": description.strip()}
+            )
+            if not created:
+                quiz.title = title.strip()
+                quiz.description = description.strip()
+                quiz.save(update_fields=["title", "description", "updated_at"])
+                quiz.questions.all().delete()
+
+            # Fragen validieren & anlegen (bulk)
+            question_objs = []
+            for idx, q in enumerate(questions, start=1):
+                q_title = q.get("question_title")
+                opts = q.get("question_options")
+                ans = q.get("answer")
+
+                if not isinstance(q_title, str) or not q_title.strip():
+                    raise serializers.ValidationError(f"Frage {idx}: 'question_title' fehlt oder ist leer.")
+                if not isinstance(opts, list) or len(opts) != 4:
+                    raise serializers.ValidationError(f"Frage {idx}: 'question_options' muss eine Liste mit exakt 4 Einträgen sein.")
+                # Duplikate entfernen wir nicht automatisch – lieber strikt validieren:
+                if len(set(opts)) != 4:
+                    raise serializers.ValidationError(f"Frage {idx}: 'question_options' enthält Duplikate.")
+                if ans not in opts:
+                    raise serializers.ValidationError(f"Frage {idx}: 'answer' muss eine der Optionen sein.")
+
+                question_objs.append(Question(
+                    quiz=quiz,
+                    question_title=q_title.strip(),
+                    question_options=opts,
+                    answer=ans.strip()
+                ))
+
+            Question.objects.bulk_create(question_objs)
+
+        return quiz   
+        
         
