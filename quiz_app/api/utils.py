@@ -69,23 +69,23 @@ def download_audio(url):
 
         return safe_mp3 if os.path.exists(safe_mp3) else mp3_path
     
-def transcript_audio(file_path: str):
+def transcript_audio(mp3_path: str):
     """
     Transkribiert Audio mit Whisper, speichert .txt in quiz_app/text_file/
     und gibt (text, text_file_path) zurück.
     """
-    print(f"-> Transcribing audio file: {file_path}")
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Audio file not found: {file_path}")
+    print(f"-> Transcribing audio file: {mp3_path}")
+    if not os.path.exists(mp3_path):
+        raise FileNotFoundError(f"Audio file not found: {mp3_path}")
 
     # Whisper-Modell laden (base/small/medium/large)
     model = whisper.load_model("base")
-    result = model.transcribe(file_path)
+    result = model.transcribe(mp3_path, fp16=False)
     text = (result.get("text") or "").strip()
 
     if not text:
         raise ValueError("No transcribed text found")
     else:
-        os.remove(file_path)
-
+        os.remove(mp3_path)
+        print(f"-> Deleted audiofile at: {mp3_path}")
     return text

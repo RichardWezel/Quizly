@@ -29,7 +29,10 @@ def _download_and_transcripe_yt_video(url):
         except Exception:
             raise serializers.ValidationError("Error processing the YouTube video (download/transcript).")
 
+
+
 class CreateQuizSerializer(serializers.Serializer):
+    print("-> Initializing CreateQuizSerializer...")
     url = serializers.URLField()
 
     # ---------- Validierung ----------
@@ -38,16 +41,8 @@ class CreateQuizSerializer(serializers.Serializer):
             raise serializers.ValidationError("Ungültige YouTube-URL.")
         return url
     
-    # ---------- Quiz-Generierung ----------
-    def _generate_quiz_from_transcript(self, url):
-        transcription = _download_and_transcripe_yt_video(url)
-
-        # Generierung von Fragen 
-        print("-> Generating quiz from transcript...")
-        client = genai.Client()
-        response_gemini = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=(
+    def _build_quiz_prompt(self, transcription: str) -> str:
+        promt=(
             "Based on the following transcript, generate a quiz in valid JSON format.\n\n"
             f"Transcript:\n{transcription}\n\n"
             "The quiz must follow this exact structure:\n\n"
@@ -70,6 +65,19 @@ class CreateQuizSerializer(serializers.Serializer):
             "- The output must be valid JSON and parsable as-is (e.g., using Python's json.loads).\n"
             "- Do not include explanations, comments, or any text outside the JSON."
             ),
+        return promt
+    
+    # ---------- Quiz-Generierung ----------
+    def _generate_quiz_from_transcript(self, url):
+        transcription = _download_and_transcripe_yt_video(url)
+
+        print("-> Generating quiz from transcript...")
+
+        client = genai.Client()
+        prompt = self._build_quiz_prompt(transcription)
+        response_gemini = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
             config={
             "response_mime_type": "application/json",
             },
@@ -93,6 +101,7 @@ class CreateQuizSerializer(serializers.Serializer):
     # ---------- Persistenz ----------
         
     def create(self, validated_data):
+        print("-> Creating or updating quiz in the database...")
         url = validated_data['url']
 
         # 1) Generiere Quiz-Daten
@@ -146,7 +155,7 @@ class CreateQuizSerializer(serializers.Serializer):
                 ))
 
             Question.objects.bulk_create(question_objs)
-
+            print("-> Quiz creation/update completed.")
         return quiz   
         
         

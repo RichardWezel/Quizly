@@ -1,0 +1,106 @@
+{
+    "title": "KI-Experte: Kreativität und Zusammenarbeit",
+    "description": "Ein KI-Experte spricht über seinen Werdegang, die Veränderung von Berufsfeldern durch KI, die Bedeutung von Kreativität und effektive Mensch-KI-Kollaboration.",
+    "questions": [
+        {
+            "question_title": "Was war die Haupttätigkeit des Sprechers für 20 Jahre?",
+            "question_options": [
+                "Künstler",
+                "Experte für Künstliche Intelligenz",
+                "Digitales Marketing",
+                "Fotograf"
+            ],
+            "answer": "Digitales Marketing"
+        },
+        {
+            "question_title": "Welchen Fokus hat der Sprecher als KI-Experte?",
+            "question_options": [
+                "Technische Möglichkeiten aufzeigen",
+                "Berufsbilder verändern",
+                "Kreativität und Zusammenarbeit von Mensch und KI",
+                "Zukünftige Entwicklungen voraussagen"
+            ],
+            "answer": "Kreativität und Zusammenarbeit von Mensch und KI"
+        },
+        {
+            "question_title": "Wofür nutzt der Sprecher neue KI-Features und -Plattformen zuerst?",
+            "question_options": [
+                "Für seine Keynotes",
+                "Für seine künstlerische Arbeit",
+                "Für den Unterricht",
+                "Um die Zukunft vorherzusagen"
+            ],
+            "answer": "Für seine künstlerische Arbeit"
+        },
+        {
+            "question_title": "Was ist die zentrale Frage in den Vorträgen des Sprechers?",
+            "question_options": [
+                "Wie optimiert man Mensch-KI-Teams?",
+                "Was ist Kreativität?",
+                "Welche Berufsfelder verändert KI?",
+                "Welche neuen KI-Funktionen gibt es?"
+            ],
+            "answer": "Was ist Kreativität?"
+        },
+        {
+            "question_title": "Was ist noch nicht bekannt bezüglich der Zusammenarbeit von Mensch und KI?",
+            "question_options": [
+                "Ob sie überhaupt stattfindet",
+                "Wie man sie am effektivsten optimiert",
+                "Welche Rollen der Mensch übernimmt",
+                "Welche Technologie dafür verwendet wird"
+            ],
+            "answer": "Wie man sie am effektivsten optimiert"
+        },
+        {
+            "question_title": "Was fehlt laut Sprecher für kreative Berufe im Umgang mit KI?",
+            "question_options": [
+                "Finanzielle Unterstützung",
+                "Ausreichende Ausbildung",
+                "Transparenz für Handlungssicherung",
+                "Neue Kollaborationswerkzeuge"
+            ],
+            "answer": "Transparenz für Handlungssicherung"
+        },
+        {
+            "question_title": "Wie hat der Sprecher primär den Umgang mit KI gelernt?",
+            "question_options": [
+                "Durch Workshops",
+                "Durch Vorträge",
+                "Durch formale Bildung",
+                "Durch \"Learning by doing\""
+            ],
+            "answer": "Durch \"Learning by doing\""
+        },
+        {
+            "question_title": "Was erschwert es anfangs, die Arbeit mit KI zu verstehen?",
+            "question_options": [
+                "Die Komplexität der Algorithmen",
+                "Die ständigen technischen Neuerungen",
+                "Das Rebranding gleicher Funktionen durch verschiedene Anbieter",
+                "Der Mangel an Lernmaterialien"
+            ],
+            "answer": "Das Rebranding gleicher Funktionen durch verschiedene Anbieter"
+        },
+        {
+            "question_title": "Was rät der Sprecher bezüglich des Einstiegs in die KI-Arbeit?",
+            "question_options": [
+                "Abwarten bis die Tools einfacher werden",
+                "Sich auf eine spezifische Anwendung konzentrieren",
+                "So früh wie möglich einsteigen",
+                "Erst nach einer formalen Ausbildung beginnen"
+            ],
+            "answer": "So früh wie möglich einsteigen"
+        },
+        {
+            "question_title": "Wie hat sich die Anzahl der Lösungsmöglichkeiten für ein bestimmtes Ergebnis mit KI im Laufe der Zeit verändert?",
+            "question_options": [
+                "Sie ist gleich geblieben",
+                "Sie ist zurückgegangen",
+                "Sie ist deutlich gestiegen",
+                "Sie ist irrelevant geworden"
+            ],
+            "answer": "Sie ist deutlich gestiegen"
+        }
+    ]
+}
