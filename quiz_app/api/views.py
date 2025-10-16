@@ -24,9 +24,31 @@ class QuizListView(generics.ListAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
 
-class QuizDetailView(generics.RetrieveAPIView):
+class QuizDetailView(generics.RetrieveUpdateAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
     lookup_field = 'id'
+
+    def update(self, request, *args, **kwargs):
+        try:
+            
+            partial = kwargs.pop('partial', True)
+            instance = self.get_object()
+            
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+
+            self.perform_update(serializer)
+            output_serializer = QuizReadSerializer(
+                instance,
+                context={**self.get_serializer_context(), 'force_full_details': True}
+            )
+            return Response(output_serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     
