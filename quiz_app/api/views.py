@@ -24,7 +24,7 @@ class QuizListView(generics.ListAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
 
-class QuizDetailView(generics.RetrieveUpdateAPIView):
+class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
     lookup_field = 'id'
@@ -51,4 +51,16 @@ class QuizDetailView(generics.RetrieveUpdateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    
+    def destroy(self, request, *args, **kwargs):
+        """Delete an offer; only the offer owner may perform this action."""
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(None, status=status.HTTP_204_NO_CONTENT)
+        except () as e:
+            raise e
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
