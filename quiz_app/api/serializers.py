@@ -103,6 +103,7 @@ class CreateQuizSerializer(serializers.Serializer):
     def create(self, validated_data):
         print("-> Creating or updating quiz in the database...")
         url = validated_data['url']
+        user = self.context['request'].user  # <--- Owner
 
         # 1) Generiere Quiz-Daten
         quiz_json = self._generate_quiz_from_transcript(url)
@@ -122,12 +123,21 @@ class CreateQuizSerializer(serializers.Serializer):
             # Upsert per video_url: vorhandenes Quiz aktualisieren & Fragen ersetzen
             quiz, created = Quiz.objects.get_or_create(
                 video_url=url,
-                defaults={"title": title.strip(), "description": description.strip()}
+                defaults={
+                    "title": title.strip(), 
+                    "description": description.strip(),
+                    "owner": user
+                }
             )
             if not created:
+                changed_fields = ["title", "description", "updated_at"]
                 quiz.title = title.strip()
                 quiz.description = description.strip()
-                quiz.save(update_fields=["title", "description", "updated_at"])
+                if quiz.owner_id is None:
+                    quiz.owner = user
+                    changed_fields.append("owner")
+                quiz.save(update_fields=changed_fields)
+
                 quiz.questions.all().delete()
 
             # Fragen validieren & anlegen (bulk)
