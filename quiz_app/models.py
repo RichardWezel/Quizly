@@ -9,7 +9,7 @@ class Quiz(models.Model):
         settings.AUTH_USER_MODEL,   
         on_delete=models.CASCADE,             # schützt vor versehentlichem Löschen des Owners
         related_name='quizzes',
-        null=True, blank=True,                      # Schritt 1: zunächst optional
+        null=False, blank=False,                      # Schritt 1: zunächst optional
         db_index=True,
         help_text="Ersteller des Quizzes"
     )

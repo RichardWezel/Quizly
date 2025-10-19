@@ -3,7 +3,7 @@ from .models import Quiz, Question
 
 @admin.register(Quiz)
 class QuizAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'description', 'video_url', 'created_at', 'updated_at')
+    list_display = ('id', 'title', 'description', 'video_url', 'owner', 'created_at', 'updated_at')
     search_fields = ('title', 'description')
     list_filter = ('created_at', 'updated_at')
     readonly_fields = ('created_at', 'updated_at')
