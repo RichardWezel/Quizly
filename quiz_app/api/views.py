@@ -2,10 +2,12 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from .serializers import CreateQuizSerializer, QuizReadSerializer
 from quiz_app.models import Quiz
+from rest_framework.permissions import IsAuthenticated
 
 
 class CreateQuizView(generics.CreateAPIView):
     serializer_class = CreateQuizSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         # 1) Nur URL validieren
@@ -23,10 +25,12 @@ class CreateQuizView(generics.CreateAPIView):
 class QuizListView(generics.ListAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
+    permission_classes = [IsAuthenticated]
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
