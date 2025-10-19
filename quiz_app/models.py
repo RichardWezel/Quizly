@@ -1,9 +1,18 @@
 from django.db import models
+from django.conf import settings
 
 class Quiz(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     video_url = models.URLField(blank=True, null=True, unique=True)
+    owner = models.ForeignKey(                      # <-- NEU
+        settings.AUTH_USER_MODEL,   
+        on_delete=models.CASCADE,             # schützt vor versehentlichem Löschen des Owners
+        related_name='quizzes',
+        null=True, blank=True,                      # Schritt 1: zunächst optional
+        db_index=True,
+        help_text="Ersteller des Quizzes"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
