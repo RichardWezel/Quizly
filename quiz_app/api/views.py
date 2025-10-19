@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .serializers import CreateQuizSerializer, QuizReadSerializer
 from quiz_app.models import Quiz
 from rest_framework.permissions import IsAuthenticated
+from .permissions import IsOwnerOrReadOnly
 
 
 class CreateQuizView(generics.CreateAPIView):
@@ -30,7 +31,7 @@ class QuizListView(generics.ListAPIView):
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
