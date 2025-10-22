@@ -1,0 +1,17 @@
+[run]
+branch = True
+source =
+    auth_app
+    quiz_app
+    core
+omit =
+    */migrations/*
+    */admin.py
+    core/settings.py
+    */tests/*
+    conftest.py
+
+[report]
+show_missing = True
+skip_covered = True
+fail_under = 70
