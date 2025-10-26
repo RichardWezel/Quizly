@@ -4,9 +4,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from datetime import datetime, timezone
 from .permissions import HasValidJWTForLogout, HasRefreshTokenAuth
 from .authentication import CookieJWTAuthentication
 from .serializers import RegistrationSerializer, LoginSerializer
@@ -41,23 +42,41 @@ class LoginView(TokenObtainPairView):
 
             refresh = serializer.validated_data["refresh"]
             access = serializer.validated_data["access"]
-            user = serializer.validated_data["user"]
+            user = serializer.user 
 
-            response = Response({"detail": "Login successfully", "user": user})
+
+            # Token-Objekte erzeugen, um jti und Ablaufzeiten zu lesen
+            refresh_obj = RefreshToken(refresh)
+            access_obj  = AccessToken(access)
+
+            for token in OutstandingToken.objects.filter(user=user).exclude(jti=refresh_obj["jti"]):
+                BlacklistedToken.objects.get_or_create(token=token)
+
+            # Cookie-Laufzeiten (in Sekunden bis Ablauf)
+            now_ts = int(datetime.now(timezone.utc).timestamp())
+            access_max_age = int(access_obj["exp"]) - now_ts
+            refresh_max_age = int(refresh_obj["exp"]) - now_ts
+
+            response = Response(
+                {"detail": "Login successfully"},
+                status=status.HTTP_200_OK
+            )
 
             response.set_cookie(
                 key='access_token',
                 value=str(access),
                 httponly=True,
                 secure=True,  
-                samesite='Lax'  
+                samesite='Lax',
+                max_age=access_max_age  
             )
             response.set_cookie(
                 key='refresh_token',
                 value=str(refresh),
                 httponly=True,
                 secure=True,  
-                samesite='Lax'  
+                samesite='Lax',
+                max_age=refresh_max_age
             )
 
             return response
