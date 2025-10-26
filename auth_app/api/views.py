@@ -58,8 +58,14 @@ class LoginView(TokenObtainPairView):
             refresh_max_age = int(refresh_obj["exp"]) - now_ts
 
             response = Response(
-                {"detail": "Login successfully"},
-                status=status.HTTP_200_OK
+                {   "detail": "Login successfully!",
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email
+                    }
+                },
+                    status=status.HTTP_200_OK
             )
 
             response.set_cookie(
