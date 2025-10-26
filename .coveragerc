@@ -2,8 +2,8 @@
 branch = True
 source =
     auth_app
-    quiz_app
-    core
+    # quiz_app
+    # core
 omit =
     */migrations/*
     */admin.py
