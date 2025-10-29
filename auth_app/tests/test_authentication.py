@@ -4,6 +4,8 @@ from rest_framework.test import APITestCase, APIClient
 from uuid import uuid4
 from django.contrib.auth import get_user_model
 User = get_user_model()
+from rest_framework_simplejwt.tokens import RefreshToken
+from unittest.mock import patch
 
 from .utils import create_user, make_access_token_for_user
 
@@ -84,6 +86,30 @@ class Tests_of_Registration(APITestCase):
         }
         self.assertEqual(response.data, response_data)
 
+    def test_registration_duplicate_email(self):
+        self.client.post(self.register_url, self.new_user_ok, format="json")
+        data = unique_user_data()
+        data["email"] = self.new_user_ok["email"]
+        resp = self.client.post(self.register_url, data, format="json")
+        assert resp.status_code == 400
+        assert "email" in resp.data
+
+    def test_registration_missing_passwords(self):
+        data = {"username": "u1", "email": "u1@example.com"}
+        resp = self.client.post(self.register_url, data, format="json")
+        assert resp.status_code == 400
+        assert "required" in str(resp.data).lower()
+
+    def test_registration_password_hashed(self):
+        resp = self.client.post(self.register_url, self.new_user_ok, format="json")
+        assert resp.status_code == 201
+        from django.contrib.auth import get_user_model
+        U = get_user_model()
+        u = U.objects.get(username=self.new_user_ok["username"])
+        assert u.password != self.new_user_ok["password"]
+        assert u.check_password(self.new_user_ok["password"])
+
+
 class Tests_of_Login(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -145,6 +171,24 @@ class Tests_of_Login(APITestCase):
         self.assertIn("access_token", self.client.cookies)
         self.assertTrue(self.client.cookies["access_token"].value)
 
+    def test_login_nonexistent_user(self):
+        resp = self.client.post(self.login_url, {"username": "nope", "password": "pass1234"}, format="json")
+        assert resp.status_code == 401
+
+    def test_login_blacklists_previous_refresh(self):
+        # 1. Login
+        r1 = self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
+        assert r1.status_code == 200
+        # 2. Login (neues Refresh erzeugt)
+        r2 = self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
+        assert r2.status_code == 200
+
+        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+        user_tokens = OutstandingToken.objects.filter(user__username=self.username)
+        # alle außer aktueller jti sollten geblacklistet sein – d. h. mind. 1 BlacklistedToken existiert
+        assert BlacklistedToken.objects.filter(token__in=user_tokens).exists()
+
+
 class Tests_of_Logout(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -180,7 +224,42 @@ class Tests_of_Logout(APITestCase):
         self.assertIsNotNone(refresh_cookie)
 
         self.assertEqual(access_cookie.value, "")
-        self.assertEqual(refresh_cookie.value, "")      
+        self.assertEqual(refresh_cookie.value, "")     
+
+    def test_logout_allowed_with_only_refresh_cookie(self):
+        # Login holen
+        self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
+        # Access-Cookie entfernen
+        self.client.cookies.pop("access_token", None)
+        resp = self.client.post(self.logout_url, {}, format="json")
+        assert resp.status_code == 200
+
+    def test_logout_forbidden_without_any_tokens(self):
+        # Keine Cookies
+        self.client.cookies.clear()
+        resp = self.client.post(self.logout_url, {}, format="json")
+        assert resp.status_code == 401
+
+    def test_logout_invalid_refresh_is_ignored_but_deletes_cookies(self):
+        # Setze absichtlich kaputten Refresh
+        self.client.cookies["refresh_token"] = "invalid"
+        resp = self.client.post(self.logout_url, {}, format="json")
+        assert resp.status_code == 200
+        # Cookies gelöscht inkl. max-age=0
+        assert resp.cookies["access_token"].value == ""
+        assert resp.cookies["access_token"]["max-age"] in ("0", 0)
+        assert resp.cookies["refresh_token"].value == ""
+        assert resp.cookies["refresh_token"]["max-age"] in ("0", 0)
+
+    def test_logout_blacklist_tokenerror_is_handled(self):
+        # Validen Refresh setzen
+        self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
+        with patch("rest_framework_simplejwt.tokens.RefreshToken.blacklist") as bl:
+            from rest_framework_simplejwt.exceptions import TokenError
+            bl.side_effect = TokenError("already blacklisted")
+            resp = self.client.post(self.logout_url, {}, format="json")
+        assert resp.status_code == 200
+ 
 
 class Tests_of_Token_Refresh(APITestCase):
     def setUp(self):
