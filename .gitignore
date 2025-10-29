@@ -25,3 +25,12 @@ venv/
 # Ignore contents of audio_file and text_file in quizapp
 quizapp/audio_file/
 quizapp/text_file/
+
+# Ignore migrations except for __init__.py
+quizapp/migrations/
+!quizapp/migrations/__init__.py
+
+# Ignore pytest cache
+.pytest_cache/
+.coverage
+htmlcov/
