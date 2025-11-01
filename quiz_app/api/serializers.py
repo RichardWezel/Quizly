@@ -98,7 +98,6 @@ class CreateQuizSerializer(serializers.Serializer):
         
         return quiz_json
     
-    # ---------- Persistenz ----------
         
     def create(self, validated_data):
         print("-> Creating or updating quiz in the database...")
@@ -116,7 +115,10 @@ class CreateQuizSerializer(serializers.Serializer):
         if not isinstance(title, str) or not title.strip():
             raise serializers.ValidationError("Fehlender oder leerer Titel im generierten Quiz.")
         if not isinstance(questions, list) or len(questions) != 10:
-            raise serializers.ValidationError("Das generierte Quiz muss genau 10 Fragen enthalten.")
+           raise serializers.ValidationError(
+            {"questions": ["Das generierte Quiz muss genau 10 Fragen enthalten."]}
+        )
+
 
         # 3) DB-Transaktion (idempotent pro video_url)
         with transaction.atomic():

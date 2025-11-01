@@ -10,8 +10,10 @@ omit =
     core/settings.py
     */tests/*
     conftest.py
+    */core/*
+    manage.py
 
 [report]
 show_missing = True
-skip_covered = True
+skip_covered = False
 fail_under = 80

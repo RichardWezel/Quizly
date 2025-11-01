@@ -69,4 +69,4 @@ def test_create_quiz_fails_when_llm_returns_less_than_10_questions(api_client, m
     response = api_client.post(url, data=payload, format="json")
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "muss genau 10 Fragen enthalten" in str(response.data["non_field_errors"][0])
+    assert "muss genau 10 Fragen enthalten" in str(response.data["questions"][0])
