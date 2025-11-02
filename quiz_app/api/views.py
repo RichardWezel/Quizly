@@ -35,26 +35,18 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
-        try:
-            
-            partial = kwargs.pop('partial', True)
-            instance = self.get_object()
-            
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
-            serializer.is_valid(raise_exception=True)
+        partial = kwargs.pop('partial', True)
+        instance = self.get_object()  # wirft PermissionDenied → DRF macht 403
 
-            self.perform_update(serializer)
-            output_serializer = QuizReadSerializer(
-                instance,
-                context={**self.get_serializer_context(), 'force_full_details': True}
-            )
-            return Response(output_serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
 
-        except Exception as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        self.perform_update(serializer)
+        output_serializer = QuizReadSerializer(
+            instance,
+            context={**self.get_serializer_context(), 'force_full_details': True}
+        )
+        return Response(output_serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         """Delete an offer; only the offer owner may perform this action."""
@@ -62,8 +54,6 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response(None, status=status.HTTP_204_NO_CONTENT)
-        except () as e:
-            raise e
         except Exception as e:
             return Response(
                 {"detail": str(e)},
