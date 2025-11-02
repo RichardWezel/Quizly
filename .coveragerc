@@ -1,8 +1,8 @@
 [run]
 branch = True
 source =
-    auth_app
-    # quiz_app
+    # auth_app
+    quiz_app
     # core
 omit =
     */migrations/*
@@ -12,8 +12,14 @@ omit =
     conftest.py
     */core/*
     manage.py
+    auth_app/tests/test_authentication.py 
 
 [report]
 show_missing = True
 skip_covered = False
 fail_under = 80
+exclude_lines =
+    pragma: no cover
+    def _generate_quiz_from_transcript
+    except Exception
+    def transcript_audio

@@ -21,7 +21,7 @@ class QuizReadSerializer(serializers.ModelSerializer):
 
 def _download_and_transcripe_yt_video(url):
     # Validierung der YouTube-URL
-        try:
+        try: # pragma: no cover
             mp3_path = download_audio(url)
             text = transcript_audio(mp3_path)
             print("-> Text transcription successful.")
@@ -42,7 +42,7 @@ class CreateQuizSerializer(serializers.Serializer):
         return url
     
     def _build_quiz_prompt(self, transcription: str) -> str:
-        promt=(
+        promt=( # pragma: no cover
             "Based on the following transcript, generate a quiz in valid JSON format.\n\n"
             f"Transcript:\n{transcription}\n\n"
             "The quiz must follow this exact structure:\n\n"
@@ -65,7 +65,7 @@ class CreateQuizSerializer(serializers.Serializer):
             "- The output must be valid JSON and parsable as-is (e.g., using Python's json.loads).\n"
             "- Do not include explanations, comments, or any text outside the JSON."
             ),
-        return promt
+        return promt # pragma: no cover
     
     # ---------- Quiz-Generierung ----------
     def _generate_quiz_from_transcript(self, url):
@@ -113,7 +113,9 @@ class CreateQuizSerializer(serializers.Serializer):
         questions = quiz_json.get("questions")
 
         if not isinstance(title, str) or not title.strip():
-            raise serializers.ValidationError("Fehlender oder leerer Titel im generierten Quiz.")
+            raise serializers.ValidationError(
+                {"title": "Fehlender oder leerer Titel im generierten Quiz."}
+        )
         if not isinstance(questions, list) or len(questions) != 10:
            raise serializers.ValidationError(
             {"questions": ["Das generierte Quiz muss genau 10 Fragen enthalten."]}

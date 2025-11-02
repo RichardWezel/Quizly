@@ -17,6 +17,7 @@ def validate_youtube_url(url):
     return isinstance(url, str) and url.startswith(valid_prefixes)
 
 def yt_url_to_id(url: str):
+    """Extract the YouTube video ID from a URL."""
     if not isinstance(url, str):
         return None  # schützt vor z. B. None oder Integer-Eingaben
 
