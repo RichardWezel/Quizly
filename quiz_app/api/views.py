@@ -4,6 +4,7 @@ from .serializers import CreateQuizSerializer, QuizReadSerializer
 from quiz_app.models import Quiz
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOrReadOnly
+from rest_framework.exceptions import PermissionDenied
 
 
 class CreateQuizView(generics.CreateAPIView):
@@ -36,7 +37,7 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
-        instance = self.get_object()  # wirft PermissionDenied → DRF macht 403
+        instance = self.get_object()
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -49,13 +50,11 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Response(output_serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
-        """Delete an offer; only the offer owner may perform this action."""
         try:
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response(None, status=status.HTTP_204_NO_CONTENT)
+        except PermissionDenied:
+            raise
         except Exception as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
