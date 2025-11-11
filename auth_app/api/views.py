@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from datetime import datetime, timezone
-from .permissions import HasValidJWTForLogout, HasRefreshTokenAuth
+from .permissions import HasRefreshTokenAuth
 from .authentication import CookieJWTAuthentication
 from .serializers import RegistrationSerializer, LoginSerializer
 
@@ -72,7 +72,7 @@ class LoginView(TokenObtainPairView):
                 key='access_token',
                 value=str(access),
                 httponly=True,
-                secure=True,  
+                secure=False,  
                 samesite='Lax',
                 max_age=access_max_age  
             )
@@ -80,7 +80,7 @@ class LoginView(TokenObtainPairView):
                 key='refresh_token',
                 value=str(refresh),
                 httponly=True,
-                secure=True,  
+                secure=False,  
                 samesite='Lax',
                 max_age=refresh_max_age
             )
@@ -91,7 +91,6 @@ class LoginView(TokenObtainPairView):
             return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutView(APIView):
-    permission_classes = [HasValidJWTForLogout]
     authentication_classes = [CookieJWTAuthentication, JWTAuthentication]
 
     def post(self, request):
@@ -137,27 +136,24 @@ class CookieTokenRefreshView(TokenRefreshView):
                 )
 
             serializer = self.get_serializer(data={'refresh': refresh_token})
-
-            try:
-                serializer.is_valid(raise_exception=True)
-            except Exception as e:
-                return Response({"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer.is_valid(raise_exception=True)
 
             access_token = serializer.validated_data.get('access')
+            new_refresh  = serializer.validated_data.get('refresh')  # kann None sein, je nach Settings
 
-            response = Response(
-                {   "detail": "Token refreshed",
-                    "access": "new_access_token"
-                },)
-            response.set_cookie(
+            resp = Response({"detail": "Token refreshed"}, status=200)
+            resp.set_cookie(
                 key='access_token',
                 value=access_token,
-                httponly=True,
-                secure=True,  
-                samesite='Lax',
-                path='/',
+                httponly=True, secure=False, samesite='Lax', path='/'
             )
-            return response
+            if new_refresh:
+                resp.set_cookie(
+                    key='refresh_token',
+                    value=new_refresh,
+                    httponly=True, secure=False, samesite='Lax', path='/'
+                )
+            return resp
         
         except (InvalidToken, TokenError):
             return Response(

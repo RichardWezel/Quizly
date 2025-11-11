@@ -5,11 +5,13 @@ from quiz_app.models import Quiz
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOrReadOnly
 from rest_framework.exceptions import PermissionDenied
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class CreateQuizView(generics.CreateAPIView):
     serializer_class = CreateQuizSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def create(self, request, *args, **kwargs):
         # 1) Nur URL validieren
@@ -28,12 +30,14 @@ class QuizListView(generics.ListAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
+    authentication_classes = [JWTAuthentication]
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
