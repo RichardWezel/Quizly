@@ -1,14 +1,17 @@
-from rest_framework import status, generics
-from rest_framework.response import Response
-from .serializers import CreateQuizSerializer, QuizReadSerializer
-from quiz_app.models import Quiz
-from rest_framework.permissions import IsAuthenticated
-from .permissions import IsOwnerOrReadOnly
-from rest_framework.exceptions import PermissionDenied
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from auth_app.api.authentication import CookieJWTAuthentication
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework import status, generics
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from .serializers import CreateQuizSerializer, QuizReadSerializer
+from quiz_app.models import Quiz
+from .permissions import IsOwnerOrReadOnly
+from auth_app.api.authentication import CookieJWTAuthentication
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class CreateQuizView(generics.CreateAPIView):
@@ -17,14 +20,11 @@ class CreateQuizView(generics.CreateAPIView):
     authentication_classes = [CookieJWTAuthentication, JWTAuthentication]
 
     def create(self, request, *args, **kwargs):
-        # 1) Nur URL validieren
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # 2) Speichern (erzeugt/aktualisiert Quiz + Fragen)
         quiz = serializer.save()
 
-        # 3) Ausgabe
         out = QuizReadSerializer(quiz)
         headers = self.get_success_headers(out.data)
         return Response(out.data, status=status.HTTP_201_CREATED, headers=headers)
