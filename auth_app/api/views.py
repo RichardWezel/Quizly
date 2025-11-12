@@ -7,6 +7,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+
 from datetime import datetime, timezone
 from .permissions import HasRefreshTokenAuth
 from .authentication import CookieJWTAuthentication
@@ -44,15 +45,12 @@ class LoginView(TokenObtainPairView):
             access = serializer.validated_data["access"]
             user = serializer.user 
 
-
-            # Token-Objekte erzeugen, um jti und Ablaufzeiten zu lesen
             refresh_obj = RefreshToken(refresh)
             access_obj  = AccessToken(access)
 
             for token in OutstandingToken.objects.filter(user=user).exclude(jti=refresh_obj["jti"]):
                 BlacklistedToken.objects.get_or_create(token=token)
 
-            # Cookie-Laufzeiten (in Sekunden bis Ablauf)
             now_ts = int(datetime.now(timezone.utc).timestamp())
             access_max_age = int(access_obj["exp"]) - now_ts
             refresh_max_age = int(refresh_obj["exp"]) - now_ts
@@ -101,7 +99,6 @@ class LogoutView(APIView):
                     token = RefreshToken(refresh_token)
                     token.blacklist()  
                 except TokenError:
-                          # z.B. schon abgelaufen/invalid – ignorieren, wir löschen eh die Cookies
                     pass
 
             response = Response(
@@ -139,7 +136,7 @@ class CookieTokenRefreshView(TokenRefreshView):
             serializer.is_valid(raise_exception=True)
 
             access_token = serializer.validated_data.get('access')
-            new_refresh  = serializer.validated_data.get('refresh')  # kann None sein, je nach Settings
+            new_refresh  = serializer.validated_data.get('refresh')  
 
             resp = Response({"detail": "Token refreshed"}, status=200)
             resp.set_cookie(
