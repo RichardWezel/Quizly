@@ -14,25 +14,23 @@ from .authentication import CookieJWTAuthentication
 from .serializers import RegistrationSerializer, LoginSerializer
 
 class RegistrationView(APIView):
+    """Handles user registration."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
 
-        data = {}
         if serializer.is_valid():
             saved_account = serializer.save()
-            data = {
-                'username': saved_account.username,
-                'email': saved_account.email,
-                'user_id': saved_account.pk
-            }
-            return Response({"detail": "User created successfully!"}, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "User created successfully!"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(TokenObtainPairView):
+    '''Handles user login by issuing JWT tokens and setting them in HttpOnly cookies.'''
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
@@ -89,6 +87,7 @@ class LoginView(TokenObtainPairView):
             return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutView(APIView):
+    '''Handles user logout by deleting JWT tokens from cookies and blacklisting the refresh token.'''
     authentication_classes = [CookieJWTAuthentication, JWTAuthentication]
 
     def post(self, request):
