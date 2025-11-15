@@ -3,8 +3,6 @@ import re
 import yt_dlp
 import whisper
 
-
-# ---------- Helpers ----------
 def validate_youtube_url(url):
     """Validate if the provided URL is a valid YouTube URL."""
     print(f"-> Validating YouTube URL: {url}")
@@ -30,19 +28,15 @@ def yt_url_to_id(url: str):
     return m.group(1) if m else None
 
 def _sanitize_filename(name: str) -> str:
-    # einfache Sanitization für Dateinamen
+    """Sanitize a string to be safe for use as a filename."""
     return re.sub(r'[\\/*?:"<>|]+', "_", name).strip()
 
 def download_audio(url):
     """Download audio from a YouTube URL and save it as an MP3 file."""
     print(f"-> Downloading audio from: {url}")
-    # Zielordner definieren (relativ zum Projektverzeichnis)
+
     output_dir = os.path.join("quiz_app", "audio_file")
-
-    # Falls Ordner noch nicht existiert → erstellen
     os.makedirs(output_dir, exist_ok=True)
-
-    # Pfad-Template für den Dateinamen
     outtmpl_path = os.path.join(output_dir, "%(title)s.%(ext)s")
 
     ydl_opts = {
@@ -59,10 +53,9 @@ def download_audio(url):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info)         # original container (z.B. .webm)
+        filename = ydl.prepare_filename(info)         
         mp3_path = os.path.splitext(filename)[0] + ".mp3"
 
-        # Sicherheitshalber normalisieren
         base = _sanitize_filename(os.path.splitext(os.path.basename(mp3_path))[0])
         safe_mp3 = os.path.join(output_dir, base + ".mp3")
         if mp3_path != safe_mp3 and os.path.exists(mp3_path):
@@ -72,14 +65,13 @@ def download_audio(url):
     
 def transcript_audio(mp3_path: str):
     """
-    Transkribiert Audio mit Whisper, speichert .txt in quiz_app/text_file/
-    und gibt (text, text_file_path) zurück.
+    Transcribes audio using Whisper, saves a .txt file in quiz_app/text_file/,
+    and returns (text, text_file_path).
     """
     print(f"-> Transcribing audio file: {mp3_path}")
     if not os.path.exists(mp3_path):
         raise FileNotFoundError(f"Audio file not found: {mp3_path}")
 
-    # Whisper-Modell laden (base/small/medium/large)
     model = whisper.load_model("base")
     result = model.transcribe(mp3_path, fp16=False)
     text = (result.get("text") or "").strip()

@@ -15,6 +15,7 @@ from auth_app.api.authentication import CookieJWTAuthentication
 
 @method_decorator(csrf_exempt, name="dispatch")
 class CreateQuizView(generics.CreateAPIView):
+    '''API view to create a Quiz from a YouTube URL.'''
     serializer_class = CreateQuizSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication, JWTAuthentication]
@@ -30,12 +31,14 @@ class CreateQuizView(generics.CreateAPIView):
         return Response(out.data, status=status.HTTP_201_CREATED, headers=headers)
     
 class QuizListView(generics.ListAPIView):
+    '''API view to list all Quizzes.'''
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
     permission_classes = [IsAuthenticated]
 
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
+    '''API view to retrieve, update, or delete a Quiz by ID.'''
     queryset = Quiz.objects.all()
     serializer_class = QuizReadSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
