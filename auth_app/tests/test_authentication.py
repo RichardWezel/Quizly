@@ -10,7 +10,7 @@ from unittest.mock import patch
 from .utils import create_user, make_access_token_for_user
 
 def unique_user_data():
-    """Erzeugt garantiert eindeutige Daten für eine Neuregistrierung."""
+    """Generates unique user data for registration tests."""
     uid = uuid4().hex[:8]
     return {
         "username": f"user_{uid}",
@@ -20,6 +20,7 @@ def unique_user_data():
     }
 
 class Tests_of_Registration(APITestCase):
+    '''Tests for the user registration endpoint.'''
     def setUp(self):
         self.client = APIClient()
 
@@ -69,7 +70,7 @@ class Tests_of_Registration(APITestCase):
         """Testet, dass ungültige E-Mail im POST-Body erkannt wird."""
         invalid_data = {
             "username": "testuser",
-            "email": "not-an-email",  # ❌ Kein @-Zeichen
+            "email": "not-an-email",  
             "password": "pass1234",
             "repeat_password": "pass1234"
         }
@@ -111,6 +112,7 @@ class Tests_of_Registration(APITestCase):
 
 
 class Tests_of_Login(APITestCase):
+    '''Tests for the user login endpoint.'''
     def setUp(self):
         self.client = APIClient()
         self.login_url = reverse("login")
@@ -145,8 +147,6 @@ class Tests_of_Login(APITestCase):
         }
         self.assertEqual(resp.data, response_data)
 
-       
-
     def test_login_cookies_set(self):
         resp = self.client.post(self.login_url, data={"username": self.username, "password": self.password}, format="json")
         self.assertIn("access_token", resp.cookies)
@@ -176,20 +176,19 @@ class Tests_of_Login(APITestCase):
         assert resp.status_code == 401
 
     def test_login_blacklists_previous_refresh(self):
-        # 1. Login
+  
         r1 = self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
         assert r1.status_code == 200
-        # 2. Login (neues Refresh erzeugt)
+   
         r2 = self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
         assert r2.status_code == 200
-
         from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
         user_tokens = OutstandingToken.objects.filter(user__username=self.username)
-        # alle außer aktueller jti sollten geblacklistet sein – d. h. mind. 1 BlacklistedToken existiert
         assert BlacklistedToken.objects.filter(token__in=user_tokens).exists()
 
 
 class Tests_of_Logout(APITestCase):
+    '''Tests for the user logout endpoint.'''
     def setUp(self):
         self.client = APIClient()
         self.login_url = reverse("login")
@@ -227,32 +226,26 @@ class Tests_of_Logout(APITestCase):
         self.assertEqual(refresh_cookie.value, "")     
 
     def test_logout_allowed_with_only_refresh_cookie(self):
-        # Login holen
         self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
-        # Access-Cookie entfernen
         self.client.cookies.pop("access_token", None)
         resp = self.client.post(self.logout_url, {}, format="json")
         assert resp.status_code == 200
 
     def test_logout_forbidden_without_any_tokens(self):
-        # Keine Cookies
         self.client.cookies.clear()
         resp = self.client.post(self.logout_url, {}, format="json")
         assert resp.status_code == 401
 
     def test_logout_invalid_refresh_is_ignored_but_deletes_cookies(self):
-        # Setze absichtlich kaputten Refresh
         self.client.cookies["refresh_token"] = "invalid"
         resp = self.client.post(self.logout_url, {}, format="json")
         assert resp.status_code == 200
-        # Cookies gelöscht inkl. max-age=0
         assert resp.cookies["access_token"].value == ""
         assert resp.cookies["access_token"]["max-age"] in ("0", 0)
         assert resp.cookies["refresh_token"].value == ""
         assert resp.cookies["refresh_token"]["max-age"] in ("0", 0)
 
     def test_logout_blacklist_tokenerror_is_handled(self):
-        # Validen Refresh setzen
         self.client.post(self.login_url, {"username": self.username, "password": self.password}, format="json")
         with patch("rest_framework_simplejwt.tokens.RefreshToken.blacklist") as bl:
             from rest_framework_simplejwt.exceptions import TokenError
@@ -262,12 +255,12 @@ class Tests_of_Logout(APITestCase):
  
 
 class Tests_of_Token_Refresh(APITestCase):
+    '''Tests for the token refresh endpoint.'''
     def setUp(self):
         self.client = APIClient()
         self.login_url = reverse("login")
         self.refresh_url = reverse("token_refresh")
 
-        # User
         self.username = "alice_login"
         self.email = "alice_login@example.com"
         self.password = "pass1234"
@@ -280,11 +273,9 @@ class Tests_of_Token_Refresh(APITestCase):
         )
         self.assertEqual(login_resp.status_code, status.HTTP_200_OK, getattr(login_resp, "data", login_resp))
 
-        # Sicherstellen, dass der Client beide Cookies hält
         self.assertIn("access_token", self.client.cookies)
         self.assertIn("refresh_token", self.client.cookies)
 
-        # Originalwerte merken, um später vergleichen zu können
         self.initial_access = self.client.cookies["access_token"].value
         self.initial_refresh = self.client.cookies["refresh_token"].value
 
@@ -302,84 +293,65 @@ class Tests_of_Token_Refresh(APITestCase):
     
     def test_refresh_with_missing_access_cookie_creates_new_access_cookie(self):
         """
-        Access-Cookie beim Client 'löschen' und dann refreshen.
-        Erwartung: 200 + neues access_token Cookie (Wert != initial_access).
+        Delete access cookie from client and then refresh.
+        Expectation: 200 + new access_token cookie (value != initial_access).
         """
-        # Access-Cookie entfernen, Refresh-Cookie bleibt -> so simulieren wir abgelaufenes/fehlendes Access
         self.client.cookies.pop("access_token", None)
 
         resp = self.client.post(self.refresh_url, data={}, format="json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-        # Server sollte einen NEUEN access_token-Cookie setzen
         self.assertIn("access_token", resp.cookies)
         new_access = resp.cookies["access_token"].value
         self.assertTrue(new_access)
         self.assertNotEqual(new_access, self.initial_access)
 
-        # Refresh-Rotation: je nach Implementierung
-        # - Wenn du NICHT rotierst: kein neuer refresh_token in resp.cookies ODER gleicher Wert wie zuvor
-        # - Wenn du rotierst: resp.cookies["refresh_token"] vorhanden und != initial_refresh
         if "refresh_token" in resp.cookies:
-            # Rotation aktiv
             new_refresh = resp.cookies["refresh_token"].value
             self.assertTrue(new_refresh)
-            # Wenn du rotierst: Wert ist anders
             self.assertNotEqual(new_refresh, self.initial_refresh)
         else:
-            # Keine Rotation -> Client behält alten refresh_token
             self.assertEqual(self.client.cookies["refresh_token"].value, self.initial_refresh)
 
     def test_refresh_without_refresh_cookie_fails(self):
         """
-        Wenn der refresh_token-Cookie fehlt, sollte der Refresh fehlschlagen.
-        Erwartung: 401 (oder 400 je nach Implementierung).
+        If the refresh_token cookie is missing, the refresh should fail.
+        Expectation: 401 (or 400 depending on the implementation).
         """
-        # Beide entfernen, damit sichergestellt ist, dass nur der Refresh fehlt
         self.client.cookies.pop("access_token", None)
         self.client.cookies.pop("refresh_token", None)
 
         resp = self.client.post(self.refresh_url, data={}, format="json")
 
-        # Je nach deiner View kann es 401 oder 400 sein. Beide akzeptieren:
         self.assertIn(resp.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_400_BAD_REQUEST), getattr(resp, "data", resp))
 
-        # Keine neuen Cookies sollten gesetzt werden
         self.assertNotIn("access_token", resp.cookies)
         self.assertNotIn("refresh_token", resp.cookies)
 
     def test_refresh_sets_new_access_even_if_access_cookie_present(self):
         """
-        Manche Implementationen setzen IMMER einen neuen access_token, auch wenn noch einer da ist.
-        Dieser Test akzeptiert beide Varianten:
-         - Entweder wird ein neuer access_token gesetzt (und überschreibt),
-         - oder der Server setzt keinen neuen (dann bleibt es still).
+        Some implementations always set a new access_token, even if one is already present.
+        This test accepts both variants:
+         - Either a new access_token is set (and overwrites),
+         - or the server does not set a new one (then it remains unchanged).
         """
         resp = self.client.post(self.refresh_url, data={}, format="json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK, getattr(resp, "data", resp))
 
         if "access_token" in resp.cookies:
-            # Server liefert einen neuen Access-Cookie
             new_access = resp.cookies["access_token"].value
             self.assertTrue(new_access)
-            # Kann gleich oder verschieden sein — meist verschieden:
-            # self.assertNotEqual(new_access, self.initial_access)
         else:
-            # Kein neuer Cookie -> alter bleibt beim Client vorhanden
             self.assertIn("access_token", self.client.cookies)
             self.assertTrue(self.client.cookies["access_token"].value)
 
     def test_refresh_response_shape_is_sane(self):
         """
-        Prüft die Response-Form, ohne unrealistische Fixed-Strings zu erzwingen.
-        Viele Implementierungen setzen NUR Cookies und geben optional 'detail' zurück.
+        Testing the response data structure of the token refresh endpoint.
         """
         resp = self.client.post(self.refresh_url, data={}, format="json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK, getattr(resp, "data", resp))
 
-        # Akzeptiere beide Varianten:
-        # - Nur detail
-        # - detail + evtl. access im Body (weniger üblich bei Cookie-Flow)
         if hasattr(resp, "data") and isinstance(resp.data, dict):
             if "detail" in resp.data:
                 self.assertIn("refresh", resp.data["detail"].lower())
