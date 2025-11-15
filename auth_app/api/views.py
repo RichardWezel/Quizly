@@ -28,9 +28,14 @@ class RegistrationView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+def login_response_data(user):
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+    }
 
 class LoginView(TokenObtainPairView):
-    '''Handles user login by issuing JWT tokens and setting them in HttpOnly cookies.'''
     permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
@@ -41,10 +46,10 @@ class LoginView(TokenObtainPairView):
 
             refresh = serializer.validated_data["refresh"]
             access = serializer.validated_data["access"]
-            user = serializer.user 
+            user = serializer.user
 
             refresh_obj = RefreshToken(refresh)
-            access_obj  = AccessToken(access)
+            access_obj = AccessToken(access)
 
             for token in OutstandingToken.objects.filter(user=user).exclude(jti=refresh_obj["jti"]):
                 BlacklistedToken.objects.get_or_create(token=token)
@@ -54,37 +59,27 @@ class LoginView(TokenObtainPairView):
             refresh_max_age = int(refresh_obj["exp"]) - now_ts
 
             response = Response(
-                {   "detail": "Login successfully!",
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email
-                    }
+                {
+                    "detail": "Login successfully!",
+                    "user": login_response_data(user),
                 },
-                    status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
 
-            response.set_cookie(
-                key='access_token',
-                value=str(access),
-                httponly=True,
-                secure=False,  
-                samesite='Lax',
-                max_age=access_max_age  
-            )
-            response.set_cookie(
-                key='refresh_token',
-                value=str(refresh),
-                httponly=True,
-                secure=False,  
-                samesite='Lax',
-                max_age=refresh_max_age
+            return set_token_cookies(
+                response,
+                access_token=access,
+                refresh_token=refresh,
+                access_max_age=access_max_age,
+                refresh_max_age=refresh_max_age,
             )
 
-            return response
+        except Exception:
+            return Response(
+                {"error": "Invalid username or password"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        except Exception as e:
-            return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutView(APIView):
     '''Handles user logout by deleting JWT tokens from cookies and blacklisting the refresh token.'''
@@ -107,7 +102,6 @@ class LogoutView(APIView):
                 status=status.HTTP_200_OK
             )
 
-
             response.delete_cookie('access_token', path='/', samesite='Lax') 
             response.delete_cookie('refresh_token', path='/', samesite='Lax') 
 
@@ -118,46 +112,68 @@ class LogoutView(APIView):
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
+def set_token_cookies(
+    response,
+    access_token,
+    refresh_token=None,
+    access_max_age=None,
+    refresh_max_age=None,
+):
+    """Set JWT tokens in HttpOnly cookies."""
+    # Access-Token-Cookie
+    response.set_cookie(
+        key="access_token",
+        value=str(access_token),
+        httponly=True,
+        secure=False,
+        samesite="Lax",
+        path="/",
+        max_age=access_max_age,
+    )
+
+    # Refresh-Token-Cookie (optional)
+    if refresh_token:
+        response.set_cookie(
+            key="refresh_token",
+            value=str(refresh_token),
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            path="/",
+            max_age=refresh_max_age,
+        )
+
+    return response
+
+
+
 class CookieTokenRefreshView(TokenRefreshView):
+    '''Handles refreshing JWT tokens using the refresh token stored in cookies.'''
     permission_classes = [HasRefreshTokenAuth]
 
     def post(self, request, *args, **kwargs):
-        try: 
+      
             refresh_token = request.COOKIES.get('refresh_token')
 
             if not refresh_token:
+                return Response({"detail": "Refresh token not found"}, status=status.HTTP_401_UNAUTHORIZED)
+            try: 
+                serializer = self.get_serializer(data={'refresh': refresh_token})
+                serializer.is_valid(raise_exception=True)
+
+                access_token = serializer.validated_data.get('access')
+                new_refresh = serializer.validated_data.get('refresh')
+
+                response = Response({"detail": "Token refreshed"}, status=200)
+                return set_token_cookies(response, access_token, new_refresh)
+        
+            except (InvalidToken, TokenError):
                 return Response(
-                    {"detail": "Refresh token not found"},
+                    {"detail": "Invalid refresh token"},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
-
-            serializer = self.get_serializer(data={'refresh': refresh_token})
-            serializer.is_valid(raise_exception=True)
-
-            access_token = serializer.validated_data.get('access')
-            new_refresh  = serializer.validated_data.get('refresh')  
-
-            resp = Response({"detail": "Token refreshed"}, status=200)
-            resp.set_cookie(
-                key='access_token',
-                value=access_token,
-                httponly=True, secure=False, samesite='Lax', path='/'
-            )
-            if new_refresh:
-                resp.set_cookie(
-                    key='refresh_token',
-                    value=new_refresh,
-                    httponly=True, secure=False, samesite='Lax', path='/'
+            except Exception:
+                return Response(
+                    {"detail": "Internal Server Error"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            return resp
-        
-        except (InvalidToken, TokenError):
-            return Response(
-                {"detail": "Invalid refresh token"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        except Exception:
-            return Response(
-                {"detail": "Internal Server Error"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
