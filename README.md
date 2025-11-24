@@ -100,8 +100,8 @@ Backend_Quizly/
 ├── core/            # Projekt-Settings, URLs, WSGI/ASGI
 ├── assets/          # Static assets (z. B. Logo)
 ├── manage.py
-├── requirements.txt
-└── README.md
+├── requirements.txt # Zu installierende Apps
+└── README.md		 # Anleitung / Handbuch
 ```
 
 ## Entwicklungshinweise
