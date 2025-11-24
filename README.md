@@ -26,8 +26,10 @@ Alle Python-Abhängigkeiten sind in `requirements.txt` gelistet.
 ## Installation (lokal)
 
 1. Repo klonen
-	`git clone https://github.com/RichardWezel/Quizly.git`
-	`cd Quizly`
+	```
+	git clone https://github.com/RichardWezel/Quizly.git
+	cd Quizly
+	```
 
 2. Virtuelle Umgebung erstellen und aktivieren
 	```
