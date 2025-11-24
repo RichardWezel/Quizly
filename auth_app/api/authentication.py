@@ -12,7 +12,5 @@ class CookieJWTAuthentication(JWTAuthentication):
                 user = self.get_user(validated)
                 return (user, validated)
             except InvalidToken:
-                # Früher: raise AuthenticationFailed(...)
-                # Jetzt: weich zurückfallen lassen – die Permission entscheidet
                 return None
         return super().authenticate(request)

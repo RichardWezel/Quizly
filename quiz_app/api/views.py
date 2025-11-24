@@ -31,10 +31,13 @@ class CreateQuizView(generics.CreateAPIView):
         return Response(out.data, status=status.HTTP_201_CREATED, headers=headers)
     
 class QuizListView(generics.ListAPIView):
-    '''API view to list all Quizzes.'''
-    queryset = Quiz.objects.all()
+    '''API view to list all Quizzes of the requesting user.'''
     serializer_class = QuizReadSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Quiz.objects.filter(owner=user)
 
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -44,6 +47,9 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     lookup_field = 'id'
 
+    def get_queryset(self):
+        user = self.request.user
+        return Quiz.objects.filter(owner=user)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', True)
