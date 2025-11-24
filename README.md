@@ -29,37 +29,43 @@ Alle Python-Abhängigkeiten sind in `requirements.txt` gelistet.
 	`git clone https://github.com/RichardWezel/Quizly.git`
 	`cd Quizly`
 
-2. Virtuelle Umgebung erstellen und aktivieren (Beispiel mit venv)
-
-	python -m venv env
+2. Virtuelle Umgebung erstellen und aktivieren
+	```
+	python3 -m venv env
 	source env/bin/activate
-
+	```
 3. Abhängigkeiten installieren
-
+	```
 	pip install -r requirements.txt
-
+	```
 4. Umgebungsvariablen
 
 	Lege eine `.env`-Datei an!
     Füge dort den Gemini-API-Schlüssel an und den Django SECRET_KEY
-    `GEMINI_API_KEY="..."`
-    `SECRET_KEY="..."`
+	```
+    GEMINI_API_KEY="..."
+    SECRET_KEY="..."
+	```
 
     API-Schlüssel für Gemini unter https://aistudio.google.com/api-keys?hl=de erstellen.
-    Einen eigenen Django Secret-Key erstellen mit `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` im Terminal.
+    Einen eigenen Django Secret-Key erstellen mit 
+	```
+	python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+	``` 
+	im Terminal.
 
 5. Datenbank-Migrationen ausführen
-
+	```
 	python manage.py migrate
-
+	```
 6. Optional: Superuser anlegen
-
+	```
 	python manage.py createsuperuser
-
+	```
 7. Server starten
-
+	```
 	python manage.py runserver
-
+	```
 Die API ist dann standardmäßig unter `http://127.0.0.1:8000/` erreichbar.
 
 ## Tests
@@ -67,13 +73,13 @@ Die API ist dann standardmäßig unter `http://127.0.0.1:8000/` erreichbar.
 Das Projekt verwendet `pytest` und `pytest-django`.
 
 1. Tests ausführen
-
+	```
 	pytest -q
-
+	```
 2. Coverage-Report (falls gewünscht)
-
+	```
 	coverage run -m pytest && coverage html
-
+	```
 Der Coverage-Report wird im Ordner `htmlcov/` angelegt.
 
 ## Wichtige Endpunkte (Beispiele)
@@ -90,6 +96,7 @@ Hinweis: Die genauen Routen können in `core/urls.py` und den App-`urls.py`-Date
 Backend_Quizly/
 ├── auth_app/        # Authentifizierungs-API, Serializer, Views, Tests
 ├── quiz_app/        # Logik für Quizzes, API-Views und Tests
+├── .env			 # Gemini-API-Key & Django Secret-Key
 ├── core/            # Projekt-Settings, URLs, WSGI/ASGI
 ├── assets/          # Static assets (z. B. Logo)
 ├── manage.py
@@ -102,13 +109,6 @@ Backend_Quizly/
 - Wenn du neue Abhängigkeiten hinzufügst, aktualisiere `requirements.txt`.
 - Schreibe kleine, isolierte Tests für neue Features und führe `pytest` lokal vor dem Push aus.
 
-## Lizenz & Kontakt
-
-Dieses Projekt ist in der Repository-Root nicht näher lizenziert — füge bei Bedarf eine `LICENSE`-Datei hinzu.
-
-Bei Fragen oder Problemen: Bitte ein Issue im Repository öffnen oder den Maintainer kontaktieren.
-
----
 
 Viel Erfolg beim Entwickeln mit Quizly! 🎯
 
