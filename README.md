@@ -38,6 +38,7 @@ Alle Python-Abhängigkeiten sind in `requirements.txt` gelistet.
 	```
 3. Abhängigkeiten installieren
 	```
+	pip install --upgrade pip
 	pip install -r requirements.txt
 	```
 4. Umgebungsvariablen
