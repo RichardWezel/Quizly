@@ -17,11 +17,17 @@ Eine Django-basierte REST-API für die Quiz-Applikation "Quizly". Dieses Backend
 Das Backend stellt Endpunkte zur Verfügung, mit denen Nutzer Quizzes erstellen, abrufen, bearbeiten und löschen können. Es gibt eine eigene Authentifizierungs-App (`auth_app`) sowie die Haupt-Quiz-Logik in `quiz_app`. Zusätzlich werden Tools wie Whisper/yt-dlp für Audio-Transkription und externe AI-Services zur Quiz-Generierung verwendet (sofern konfiguriert).
 
 ## Voraussetzungen
-- Python 3.12 (virtuelle Umgebung empfohlen)
-- SQLite (für lokale Entwicklung ist bereits eine `db.sqlite3` enthalten)
-- Systemabhängige Tools für Media-Verarbeitung: ffmpeg
 
-Alle Python-Abhängigkeiten sind in `requirements.txt` gelistet.
+- Python **3.12 oder höher**
+  Hinweis: Das macOS-System-Python (3.9) funktioniert NICHT für dieses Projekt.
+  yt-dlp und Whisper nutzen Funktionen, die Python ≥3.10 voraussetzen.
+  Siehe Abschnitt "Installation".
+
+- Virtuelle Umgebung (venv)
+
+- ffmpeg (für YouTube-Audio-Extraktion)
+  Installation unter macOS:
+    brew install ffmpeg
 
 ## Installation (lokal)
 
@@ -31,17 +37,37 @@ Alle Python-Abhängigkeiten sind in `requirements.txt` gelistet.
 	cd Quizly
 	```
 
-2. Virtuelle Umgebung erstellen und aktivieren
+2. Python-Version sicherstellen
+
+Dieses Projekt benötigt Python 3.12 oder höher.
+Das macOS-System-Python (z. B. 3.9.6) ist zu alt und führt zu 403-Fehlern bei yt-dlp.
+
+Installation von Python 3.12 über Homebrew:
 	```
-	python3 -m venv env
-	source env/bin/activate
+    brew install python@3.12
 	```
-3. Abhängigkeiten installieren
+Prüfen:
 	```
-	pip install --upgrade pip
-	pip install -r requirements.txt
+    python3.12 --version
 	```
-4. Umgebungsvariablen
+
+3. Virtuelle Umgebung erstellen und aktivieren
+	```
+    python3.12 -m venv env
+    source env/bin/activate
+	```
+
+4. Abhängigkeiten installieren
+	```
+    pip install --upgrade pip
+    pip install -r requirements.txt
+	```
+
+Hinweis:
+yt-dlp wird automatisch in einer Version installiert, die mit Python 3.12 kompatibel ist.
+Die System-Version von yt-dlp (z. B. Homebrew) ist getrennt und nicht relevant.
+
+5. Umgebungsvariablen
 
 	Lege eine `.env`-Datei an!
     Füge dort den Gemini-API-Schlüssel an und den Django SECRET_KEY
@@ -57,19 +83,28 @@ Alle Python-Abhängigkeiten sind in `requirements.txt` gelistet.
 	``` 
 	im Terminal.
 
-5. Datenbank-Migrationen ausführen
+6. Datenbank-Migrationen ausführen
 	```
 	python manage.py migrate
 	```
-6. Optional: Superuser anlegen
+7. Optional: Superuser anlegen
 	```
 	python manage.py createsuperuser
 	```
-7. Server starten
+8. Server starten
 	```
 	python manage.py runserver
 	```
 Die API ist dann standardmäßig unter `http://127.0.0.1:8000/` erreichbar.
+
+## Hinweis zur yt-dlp Version
+
+Die macOS-Version von yt-dlp (z. B. installiert über Homebrew oder als Binary)
+kann neuer sein als die PyPI-Version.
+
+Das Backend verwendet ausschließlich die Python-PyPI-Version.
+Damit es korrekt läuft, muss die Python-Version >= 3.10 sein
+(siehe Voraussetzungen).
 
 ## Tests
 
