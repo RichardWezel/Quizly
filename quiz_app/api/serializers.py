@@ -44,10 +44,12 @@ class CreateQuizSerializer(serializers.Serializer):
     
     def _build_quiz_prompt(self, transcription: str) -> str:
         '''Build the prompt for the GenAI model to generate a quiz.'''
-        promt=( # pragma: no cover
-            "Based on the following transcript, generate a quiz in valid JSON format.\n\n"
+        prompt = (
+            "Based on the following transcript, generate exactly one JSON object and nothing else.\n\n"
             f"Transcript:\n{transcription}\n\n"
-            "The quiz must follow this exact structure:\n\n"
+            "Return valid JSON only, without markdown, code fences, comments, or explanatory text.\n"
+            "The output must be parseable directly with json.loads() in Python.\n\n"
+            "The quiz must follow this exact JSON structure:\n\n"
             "{\n"
             '  "title": "Create a concise quiz title based on the topic of the transcript.",\n'
             '  "description": "Summarize the transcript in no more than 150 characters. Do not include any quiz questions or answers.",\n'
@@ -61,13 +63,16 @@ class CreateQuizSerializer(serializers.Serializer):
             "    (exactly 10 questions)\n"
             "  ]\n"
             "}\n\n"
-            "Requirements:\n"
+            "Rules:\n"
+            "- Output only valid JSON. Do not add any text before or after the JSON object.\n"
+            "- Do not use markdown formatting, backticks, or explanatory text.\n"
+            "- Generate exactly 10 questions.\n"
             "- Each question must have exactly 4 distinct answer options.\n"
-            "- Only one correct answer is allowed per question, and it must be present in 'question_options'.\n"
-            "- The output must be valid JSON and parsable as-is (e.g., using Python's json.loads).\n"
-            "- Do not include explanations, comments, or any text outside the JSON."
-            ),
-        return promt # pragma: no cover
+            "- Only one correct answer is allowed per question, and it must be one of the options.\n"
+            "- Do not include any additional fields beyond title, description, and questions.\n"
+            "- Do not pluralize or change the field names. Use exactly the keys shown above.\n"
+        )
+        return prompt
     
 
     def _generate_quiz_from_transcript(self, url):
@@ -82,7 +87,8 @@ class CreateQuizSerializer(serializers.Serializer):
             model="gemini-2.5-flash",
             contents=prompt,
             config={
-            "response_mime_type": "application/json",
+                "response_mime_type": "application/json",
+                "temperature": 0.0,
             },
         )
 
@@ -97,8 +103,13 @@ class CreateQuizSerializer(serializers.Serializer):
             print("-> Quiz generation successful.")
         except json.JSONDecodeError:
             print("-> Failed to parse generated content as JSON.")
-            raise ValueError("Generated content is not valid JSON")
-        
+            print("-> Raw generated content:\n" + quiz_data[:2000])
+            try:
+                quiz_json, _ = json.JSONDecoder().raw_decode(quiz_data)
+                print("-> Parsed JSON prefix despite trailing content.")
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Generated content is not valid JSON")
+
         return quiz_json
     
         
