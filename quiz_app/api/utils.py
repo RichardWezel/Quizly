@@ -1,6 +1,7 @@
 import os
 import re
 import yt_dlp
+import yt_dlp.update as yt_dlp_update
 import whisper
 
 def validate_youtube_url(url):
@@ -31,8 +32,28 @@ def _sanitize_filename(name: str) -> str:
     """Sanitize a string to be safe for use as a filename."""
     return re.sub(r'[\\/*?:"<>|]+', "_", name).strip()
 
+def ensure_latest_yt_dlp():
+    """Check whether yt-dlp is up to date and update it if necessary."""
+    print("-> Checking yt-dlp version...")
+    try:
+        ydl = yt_dlp.YoutubeDL({"quiet": True})
+        updater = yt_dlp_update.Updater(ydl)
+        update_info = updater.query_update(_output=False)
+        if update_info:
+            print(f"-> New yt-dlp version available: {update_info.version}. Updating now...")
+            updated = updater.update()
+            if updated:
+                print("-> yt-dlp successfully updated.")
+            else:
+                print("-> yt-dlp update was skipped or failed.")
+        else:
+            print("-> yt-dlp is already up to date.")
+    except Exception as exc:
+        print(f"-> yt-dlp version check/update failed: {exc}")
+
 def download_audio(url):
     """Download audio from a YouTube URL and save it as an MP3 file."""
+    ensure_latest_yt_dlp()
     print(f"-> Downloading audio from: {url}")
 
     output_dir = os.path.join("quiz_app", "audio_file")
@@ -61,7 +82,9 @@ def download_audio(url):
         if mp3_path != safe_mp3 and os.path.exists(mp3_path):
             os.replace(mp3_path, safe_mp3)
 
-        return safe_mp3 if os.path.exists(safe_mp3) else mp3_path
+        final_path = safe_mp3 if os.path.exists(safe_mp3) else mp3_path
+        print(f"-> Download successful: {final_path}")
+        return final_path
     
 def transcript_audio(mp3_path: str):
     """
@@ -81,4 +104,5 @@ def transcript_audio(mp3_path: str):
     else:
         os.remove(mp3_path)
         print(f"-> Deleted audiofile at: {mp3_path}")
+        print(f"-> Transcription successful: {mp3_path}")
     return text
